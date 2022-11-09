@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+const { MongoClient, ServerApiVersion } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const app = express();
 const port = process.env.PORT || 5000;
@@ -26,6 +27,29 @@ app.use(express.json());
 //     next();
 //   });
 // }
+
+
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.gt8bmu9.mongodb.net/?retryWrites=true&w=majority`;
+console.log(uri);
+const client = new MongoClient(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverApi: ServerApiVersion.v1,
+});
+
+async function run(){
+   const menuCollection = client.db("petChukti").collection('menu');
+  app.get('/menu',async(req,res)=>{
+   
+    const query={};
+    const cursor = menuCollection.find(query);
+    const menuItems = await cursor.toArray();
+    res.send(menuItems);
+    
+  })
+}
+
+run().catch(err=>console.log(err));
 
 
 
