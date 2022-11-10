@@ -13,24 +13,24 @@ app.use(express.json());
 
 // require("crypto").randomBytes(64).toString("hex");
 
-// function verifyJWT(req, res, next) {
-//   const authHeader = req.headers.authorization;
-//   if (!authHeader) {
-//     return res.status(401).send({ message: "unauthorized access" });
-//   }
-//   const token = authHeader.split(" ")[1];
-//   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (error, decoded) {
-//     if (error) {
-//       return res.status(401).send({ message: "unauthorized access" });
-//     }
-//     req.decoded = decoded;
-//     next();
-//   });
-// }
 
+function verifyJWT(req,res,next){
+    const authHeader = req.headers.authorization;
+    if(!authHeader){
+      return res.status(401).send({message:'unauthorized access'});
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,function(err,decoded){
+        if(err){
+          res.status(403).send({message:'unauthorized access'})
+        }
+        req.decoded = decoded;
+        next();
+    });
+
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.gt8bmu9.mongodb.net/?retryWrites=true&w=majority`;
-console.log(uri);
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -41,6 +41,11 @@ async function run(){
   const menuCollection = client.db("petChukti").collection("menu");
   const reviewCollection = client.db("petChukti").collection("review");
 
+    app.post('/jwt',(req,res)=>{
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
+      res.send({token});
+    })
   //get all menu or limit menu if limit is sent as number
   app.get("/menu", async (req, res) => {
     let query = {};
@@ -97,8 +102,12 @@ async function run(){
   });
 
   //get reviews for particular user
-  app.get("/review/userReview/:email", async (req, res) => {
+  app.get("/review/userReview/:email", verifyJWT, async (req, res) => {
+    const decoded = req.decoded;
     const email = req.params.email;
+    if(decoded.email!==email){
+      res.status(403).send({message:'unauthorized acces'})
+    }
     const query = {
       email: email,
     };
