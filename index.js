@@ -22,7 +22,7 @@ function verifyJWT(req,res,next){
     const token = authHeader.split(' ')[1];
     jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,function(err,decoded){
         if(err){
-          res.status(403).send({message:'unauthorized access'})
+          res.status(403).send({message:'forbidden access'})
         }
         req.decoded = decoded;
         next();
