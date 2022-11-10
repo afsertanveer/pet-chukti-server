@@ -39,11 +39,12 @@ const client = new MongoClient(uri, {
 
 async function run(){
    const menuCollection = client.db("petChukti").collection('menu');
+   const reviewCollection = client.db("petChukti").collection("review");
   app.get('/menu',async(req,res)=>{
    
     let query={};
     let menuItems = [];
-    console.log(req.query.number);
+    //get all menu or limit menu if limit is sent as number
     if(req.query.number){
       const number = parseInt(req.query.number);
       const cursor = menuCollection.find(query).sort( [['_id', -1]] ).limit(number);
@@ -57,7 +58,7 @@ async function run(){
     res.send(menuItems);
     
   })
-
+    //get a particular menu for a particular id
     app.get("/menu/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
@@ -65,6 +66,28 @@ async function run(){
       res.send(menu);
     });
 
+    //post review
+           app.post("/review", async (req, res) => {
+             const review = req.body;
+             const result = await reviewCollection.insertOne(review);
+             res.send(result);
+           });
+
+    //get all review
+    app.get("/review", async (req, res) => {
+      let query = {};
+        const cursor = reviewCollection.find(query);
+        const reviews = await cursor.toArray();
+      res.send(reviews);
+    });
+    //get reviews for particular menu
+     app.get("/review/:id", async (req, res) => {
+       const id = req.params.id;
+       const query = { menu: id };
+       const cursor = reviewCollection.find(query);
+       const reviews = await cursor.toArray();
+       res.send(reviews);
+     });
 }
 
 run().catch(err=>console.log(err));
