@@ -41,9 +41,19 @@ async function run(){
    const menuCollection = client.db("petChukti").collection('menu');
   app.get('/menu',async(req,res)=>{
    
-    const query={};
-    const cursor = menuCollection.find(query);
-    const menuItems = await cursor.toArray();
+    let query={};
+    let menuItems = [];
+    console.log(req.query.number);
+    if(req.query.number){
+      const number = parseInt(req.query.number);
+      const cursor = menuCollection.find(query).sort( [['_id', -1]] ).limit(number);
+     menuItems = await cursor.toArray();
+      
+    }
+    else{
+      const cursor = menuCollection.find(query);
+       menuItems = await cursor.toArray();
+    }
     res.send(menuItems);
     
   })
