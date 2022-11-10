@@ -40,10 +40,11 @@ const client = new MongoClient(uri, {
 async function run(){
   const menuCollection = client.db("petChukti").collection("menu");
   const reviewCollection = client.db("petChukti").collection("review");
+
+  //get all menu or limit menu if limit is sent as number
   app.get("/menu", async (req, res) => {
     let query = {};
     let menuItems = [];
-    //get all menu or limit menu if limit is sent as number
     if (req.query.number) {
       const number = parseInt(req.query.number);
       const cursor = menuCollection
@@ -106,7 +107,18 @@ async function run(){
     res.send(reviews);
   });
 
+  //get review for particular id
+  app.get("/review/reviewDetails/:id", async (req, res) => {
+    const id = req.params.id;
+    const query = {
+      _id: ObjectId(id),
+    };
+    const result = await reviewCollection.findOne(query);
+    res.send(result);
+  });
+
   //update a particular menu after user submits a rating
+
   app.patch("/menu/:id", async (req, res) => {
     const id = req.params.id;
     const status = req.body.status;
@@ -120,8 +132,22 @@ async function run(){
     res.send(result);
   });
 
+  //edit a review
+  app.patch("/review/:id", async(req, res) => {
+    const id = req.params.id;
+    const details = req.body.details;
+    const query = { _id: ObjectId(id) };
+    const updatedDoc = {
+      $set: {
+        details: details,
+      },
+    };
+    const result = await reviewCollection.updateOne(query, updatedDoc);
+    res.send(result);
+  });
+
   // delete a review
-  app.delete("/review/:id",async(req,res)=>{
+  app.delete("/review/:id", async (req, res) => {
     const id = req.params.id;
     const query = { _id: ObjectId(id) };
     const result = await reviewCollection.deleteOne(query);
