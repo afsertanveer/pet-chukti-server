@@ -38,56 +38,95 @@ const client = new MongoClient(uri, {
 });
 
 async function run(){
-   const menuCollection = client.db("petChukti").collection('menu');
-   const reviewCollection = client.db("petChukti").collection("review");
-  app.get('/menu',async(req,res)=>{
-   
-    let query={};
+  const menuCollection = client.db("petChukti").collection("menu");
+  const reviewCollection = client.db("petChukti").collection("review");
+  app.get("/menu", async (req, res) => {
+    let query = {};
     let menuItems = [];
     //get all menu or limit menu if limit is sent as number
-    if(req.query.number){
+    if (req.query.number) {
       const number = parseInt(req.query.number);
-      const cursor = menuCollection.find(query).sort( [['_id', -1]] ).limit(number);
-     menuItems = await cursor.toArray();
-      
-    }
-    else{
+      const cursor = menuCollection
+        .find(query)
+        .sort([["_id", -1]])
+        .limit(number);
+      menuItems = await cursor.toArray();
+    } else {
       const cursor = menuCollection.find(query);
-       menuItems = await cursor.toArray();
+      menuItems = await cursor.toArray();
     }
     res.send(menuItems);
-    
-  })
-    //get a particular menu for a particular id
-    app.get("/menu/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: ObjectId(id) };
-      const menu = await menuCollection.findOne(query);
-      res.send(menu);
-    });
+  });
+  //get a particular menu for a particular id
+  app.get("/menu/:id", async (req, res) => {
+    const id = req.params.id;
+    const query = { _id: ObjectId(id) };
+    const menu = await menuCollection.findOne(query);
+    res.send(menu);
+  });
 
-    //post review
-           app.post("/review", async (req, res) => {
-             const review = req.body;
-             const result = await reviewCollection.insertOne(review);
-             res.send(result);
-           });
+  //post a menu
+  app.post("/menu", async (req, res) => {
+    const review = req.body;
+    const result = await menuCollection.insertOne(review);
+    res.send(result);
+  });
 
-    //get all review
-    app.get("/review", async (req, res) => {
-      let query = {};
-        const cursor = reviewCollection.find(query);
-        const reviews = await cursor.toArray();
-      res.send(reviews);
-    });
-    //get reviews for particular menu
-     app.get("/review/:id", async (req, res) => {
-       const id = req.params.id;
-       const query = { menu: id };
-       const cursor = reviewCollection.find(query);
-       const reviews = await cursor.toArray();
-       res.send(reviews);
-     });
+  //post review
+  app.post("/review", async (req, res) => {
+    const review = req.body;
+    const result = await reviewCollection.insertOne(review);
+    res.send(result);
+  });
+
+  //get all review
+  app.get("/review", async (req, res) => {
+    let query = {};
+    const cursor = reviewCollection.find(query);
+    const reviews = await cursor.toArray();
+    res.send(reviews);
+  });
+  //get reviews for particular menu
+  app.get("/review/:id", async (req, res) => {
+    const id = req.params.id;
+    const query = { menu: id };
+    const cursor = reviewCollection.find(query).sort({ timeReviewed: -1 });
+    const reviews = await cursor.toArray();
+    res.send(reviews);
+  });
+
+  //get reviews for particular user
+  app.get("/review/userReview/:email", async (req, res) => {
+    const email = req.params.email;
+    const query = {
+      email: email,
+    };
+    const cursor = reviewCollection.find(query);
+    const reviews = await cursor.toArray();
+    res.send(reviews);
+  });
+
+  //update a particular menu after user submits a rating
+  app.patch("/menu/:id", async (req, res) => {
+    const id = req.params.id;
+    const status = req.body.status;
+    const query = { _id: ObjectId(id) };
+    const updatedDoc = {
+      $set: {
+        status: status,
+      },
+    };
+    const result = await orderCollection.updateOne(query, updatedDoc);
+    res.send(result);
+  });
+
+  // delete a review
+  app.delete("/review/:id",async(req,res)=>{
+    const id = req.params.id;
+    const query = { _id: ObjectId(id) };
+    const result = await reviewCollection.deleteOne(query);
+    res.send(result);
+  });
 }
 
 run().catch(err=>console.log(err));
